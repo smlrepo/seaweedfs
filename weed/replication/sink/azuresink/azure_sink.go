@@ -51,7 +51,10 @@ func (g *AzureSink) initialize(accountName, accountKey, container, dir string) e
 	g.dir = dir
 
 	// Use your Storage account's name and key to create a credential object.
-	credential := azblob.NewSharedKeyCredential(accountName, accountKey)
+	credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
+	if err != nil {
+		return err
+	}
 
 	// Create a request pipeline that is used to process HTTP(S) requests and responses.
 	p := azblob.NewPipeline(credential, azblob.PipelineOptions{})
@@ -111,7 +114,7 @@ func (g *AzureSink) CreateEntry(key string, entry *filer_pb.Entry) error {
 
 		var writeErr error
 		_, readErr := util.ReadUrlAsStream(fileUrl, chunk.Offset, int(chunk.Size), func(data []byte) {
-			_, writeErr = appendBlobURL.AppendBlock(ctx, bytes.NewReader(data), azblob.BlobAccessConditions{})
+			_, writeErr = appendBlobURL.AppendBlock(ctx, bytes.NewReader(data), azblob.AppendBlobAccessConditions{}, nil)
 		})
 
 		if readErr != nil {
